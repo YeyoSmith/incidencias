@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captura de Incidencias - Jefaturas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen">
+
+    <header class="bg-blue-900 text-white shadow-md p-5 mb-8">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">Portal de Captura: Jefes de Área</h1>
+            <span class="bg-blue-800 px-4 py-1 rounded-full text-xs font-semibold" id="rolArea">Cargando Área...</span>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8 max-w-md mx-auto">
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-slate-600 mb-1">Tu Departamento / Área</label>
+                <select id="jefeArea" onchange="actualizarInterfaz()" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-medium text-slate-700">
+                    <option value="Desarrollo">Desarrollo</option>
+                    <option value="Fiscal">Fiscal</option>
+                    <option value="Auditoría">Auditoría</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-slate-600 mb-1">Semana a Capturar</label>
+                <input type="number" id="jefeSemana" min="1" max="53" placeholder="Ej. 21" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <button onclick="cargarEquipo()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded-lg transition">
+                Cargar Lista de Personal
+            </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-12">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 border-b border-slate-200 text-slate-600 text-xs font-bold uppercase">
+                            <th class="px-6 py-3">Colaborador</th>
+                            <th class="px-6 py-3 text-center w-20">Faltas</th>
+                            <th class="px-6 py-3 text-center w-20">Vacaciones</th>
+                            <th class="px-6 py-3 text-center w-20">Permisos Goce</th> 
+                            <th class="px-6 py-3 text-center w-20">Hrs Extra</th>
+                            <th class="px-6 py-3 text-center w-20">Participación</th> 
+                            <th class="px-6 py-3 text-center w-20">Permiso Hrs</th>
+                            <th class="px-6 py-3 text-center w-20">Días Periodo</th>
+                            <th class="px-6 py-3">Comentarios</th>
+                            <th class="px-6 py-3 text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaCuerpo" class="divide-y divide-slate-200 text-sm">
+                        <tr>
+                            <td colspan="10" class="px-6 py-10 text-center text-slate-400 bg-slate-50 italic">
+                                Ingresa la semana y presiona "Cargar Lista de Personal" para empezar la captura.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function actualizarInterfaz() {
+            document.getElementById('rolArea').textContent = "Área: " + document.getElementById('jefeArea').value;
+        }
+        actualizarInterfaz();
+
+        async function cargarEquipo() {
+            const area = document.getElementById('jefeArea').value;
+            const numSemana = document.getElementById('jefeSemana').value;
+            if (!numSemana) { alert('Ingresa la semana.'); return; }
+
+            try {
+                const response = await fetch(`/api/incidencias/por-area?area=${encodeURIComponent(area)}&num_semana=${parseInt(numSemana)}`);
+                const data = await response.json();
+                const tbody = document.getElementById('tablaCuerpo');
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-slate-400 italic">No hay registros inicializados para esta semana. Avisa a Administración.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(emp => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-slate-900">${emp.nombre}<br><span class="text-xs text-slate-400">${emp.puesto}</span></td>
+                        <td class="px-6 py-4 text-center"><input type="number" id="faltas-${emp.id_incidencia}" value="${emp.faltas || 0}" min="0" max="7" class="w-16 text-center border rounded p-1 outline-none"></td>
+                        <td class="px-6 py-4 text-center"><input type="number" id="vacaciones-${emp.id_incidencia}" value="${emp.vacaciones || 0}" min="0" max="7" class="w-16 text-center border rounded p-1 outline-none"></td>
+                        <td class="px-6 py-4 text-center"><input type="number" id="permisos-${emp.id_incidencia}" value="${emp.permisos_con_goce || 0}" min="0" max="7" step="0.5" class="w-16 text-center border rounded p-1 outline-none"></td>
+                        <td class="px-6 py-4 text-center"><input type="number" id="horas-${emp.id_incidencia}" value="${emp.horas_extra || 0}" min="0" class="w-16 text-center border rounded p-1 outline-none"></td>
+                        <td class="px-6 py-4 text-center"><input type="number" id="participacion-${emp.id_incidencia}" value="${emp.participacion || 0}" min="0" class="w-16 text-center border rounded p-1 outline-none"></td>
+                        <td class="px-6 py-4 text-center"><input type="number" id="permiso-horas-${emp.id_incidencia}" value="${emp.permiso_horas || 0}" min="0" class="w-16 text-center border rounded p-1 outline-none"></td>
+                        <td class="px-6 py-4 text-center font-bold text-blue-700 bg-slate-50">${emp.dias_periodo || 0}</td>
+                        <td class="px-6 py-4"><input type="text" id="comentarios-${emp.id_incidencia}" value="${emp.comentarios || ''}" placeholder="Nota..." class="w-full border rounded px-2 py-1 text-xs outline-none"></td>
+                        <td class="px-6 py-4 text-center"><button onclick="guardarCambios(${emp.id_incidencia})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 px-3 rounded shadow-sm transition">Guardar</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) { console.error(error); alert('Error al cargar equipo.'); }
+        }
+
+        async function guardarCambios(idIncidencia) {
+            const faltas = document.getElementById(`faltas-${idIncidencia}`).value;
+            const vacaciones = document.getElementById(`vacaciones-${idIncidencia}`).value;
+            const permisosConGoce = document.getElementById(`permisos-${idIncidencia}`).value; // Captura 1
+            const horasExtra = document.getElementById(`horas-${idIncidencia}`).value;
+            const participacion = document.getElementById(`participacion-${idIncidencia}`).value; // Captura 2
+            const permisoHoras = document.getElementById(`permiso-horas-${idIncidencia}`).value;
+            const comentarios = document.getElementById(`comentarios-${idIncidencia}`).value;
+
+            try {
+                const response = await fetch('/api/incidencias/actualizar', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_incidencia: idIncidencia,
+                        faltas: parseFloat(faltas) || 0,
+                        vacaciones: parseFloat(vacaciones) || 0,
+                        permisos_con_goce: parseFloat(permisosConGoce) || 0,
+                        horas_extra: parseInt(horasExtra) || 0,
+                        participacion: parseInt(participacion) || 0,
+                        permiso_horas: parseInt(permisoHoras) || 0,
+                        comentarios: comentarios
+                    })
+                });
+                if (response.ok) { cargarEquipo(); } else { alert('Error al guardar.'); }
+            } catch (error) { console.error(error); }
+        }
+    </script>
+</body>
+</html>
