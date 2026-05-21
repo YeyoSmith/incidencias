@@ -42,8 +42,17 @@
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Filtrar por Área</label>
                         <select id="filtroArea" class="w-full px-3 py-1.5 border rounded-lg bg-white text-sm outline-none">
                             <option value="Desarrollo">Desarrollo</option>
-                            <option value="Fiscal">Fiscal</option>
-                            <option value="Auditoría">Auditoría</option>
+                            <option value="Cedet">Cedet</option>
+                            <option value="Devoluciones">Devoluciones</option>
+                            <option value="Tecnologias fiscales">Tecnologias fiscales</option>
+                            <option value="contaduria 1">contaduria 1</option>
+                            <option value="Contaduria 2">Contaduria 2</option>
+                            <option value="Contaduria">Contaduria</option>
+                            <option value="Contaduria 3">Contaduria 3</option>
+                            <option value="Administracion">Administracion</option>
+                            <option value="Contaduria 4">Contaduria 4</option>
+                            <option value="Contaduria 5">Contaduria 5</option>
+                            <option value="Nominas">Nominas</option>
                         </select>
                     </div>
                     <div>
@@ -160,15 +169,15 @@
         // Función nativa para descargar los datos de la tabla directamente a un archivo de Excel (formato CSV limpio)
         function exportarExcel() {
             if (registrosActuales.length === 0) {
-                alert('No hay datos en la tabla para exportar. Haz una búsqueda primero.');
+                alert("No hay datos para exportar. Realiza una búsqueda primero.");
                 return;
             }
 
-            // Encabezados del archivo Excel
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // \uFEFF añade compatibilidad con acentos en Excel
-            csvContent += "Nombre,Area,Puesto,Faltas,Vacaciones,Horas Extra,Permiso Hrs,Dias Periodo,Comentarios\n";
-
-            // Mapeamos los registros cargados en pantalla
+            // 1. Títulos de las columnas (El orden aquí debe ser IDÉNTICO al de la fila de abajo)
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // El \uFEFF evita problemas con eñes y acentos en Excel
+            csvContent += "Nombre,Area,Puesto,Faltas,Vacaciones,Permisos Goce,Horas Extra,Participacion,Permiso Horas,Dias Periodo,Comentarios\n";
+            
+            // 2. Recorremos los registros cargados en la pantalla
             registrosActuales.forEach(r => {
                 const fila = [
                     `"${r.nombre}"`,
@@ -181,17 +190,20 @@
                     r.participacion,
                     r.permiso_horas,
                     r.dias_periodo,
-                    `"${r.comentarios || ''}"`
+                    `"${r.comentarios || 'Vacío'}"`
                 ];
+                
                 csvContent += fila.join(",") + "\n";
             });
-
-            // Creamos un link fantasma para disparar la descarga del archivo en el navegador
+            
+            // 3. Proceso de descarga automática del archivo
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Prenomina_Semana_${document.getElementById('filtroSemana').value}.csv`);
+            const numSemana = document.getElementById('filtroSemana').value || 'Sin_Semana';
+            link.setAttribute("download", `Reporte_Incidencias_Semana_${numSemana}.csv`);
             document.body.appendChild(link);
+            
             link.click();
             document.body.removeChild(link);
         }
